@@ -5,6 +5,7 @@ import json
 import os
 import re
 import shutil
+import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -18,7 +19,20 @@ NOTEBOOK_META_NAME = ".notebooklm.json"
 FAILED_LOG_NAME = "failures.jsonl"
 FRONTMATTER_BOUNDARY = "---"
 
-NLM_BIN: str = shutil.which("nlm") or str(Path.home() / ".local" / "bin" / "nlm")
+
+def _resolve_nlm_bin() -> str:
+    """Find nlm CLI: check PATH, then current venv, then user local."""
+    found = shutil.which("nlm")
+    if found:
+        return found
+    # Check inside the current Python's venv (pip-installed alongside us)
+    venv_bin = Path(sys.prefix) / ("Scripts" if os.name == "nt" else "bin") / "nlm"
+    if venv_bin.is_file():
+        return str(venv_bin)
+    return str(Path.home() / ".local" / "bin" / "nlm")
+
+
+NLM_BIN: str = _resolve_nlm_bin()
 
 
 # ── paths dataclass ────────────────────────────────────────────────────
